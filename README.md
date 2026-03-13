@@ -2,6 +2,12 @@
 
 Ung dung DApp quan ly phong gym voi bo khung Hardhat co ban + giao dien frontend tinh.
 
+## Phan cong cong viec (3 nguoi)
+
+- FE: Thiet ke giao dien quan ly hoi vien/goi tap va ket noi vi.
+- BE: Xay API nghiep vu va tich hop goi smart contract.
+- DB: Thiet ke schema, toi uu truy van va backup du lieu.
+
 ## Cau truc du an
 
 - contracts/: Smart contract Solidity
