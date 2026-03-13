@@ -1,24 +1,54 @@
 # DApp_quanlyGym
 
-Ứng dụng DApp quản lý phòng gym.
+Ung dung DApp quan ly phong gym voi bo khung Hardhat co ban + giao dien frontend tinh.
 
-## Mục tiêu
-- Quản lý hội viên và gói tập.
-- Theo dõi lịch sử đăng ký/thanh toán minh bạch trên blockchain.
+## Cau truc du an
 
-## Bắt đầu nhanh
-1. Clone dự án.
-2. Mở file `index.html` bằng Live Server hoặc web server local.
-3. Bấm `Ket noi vi` để kết nối MetaMask.
+- contracts/: Smart contract Solidity
+- ignition/modules/: Module deploy bang Hardhat Ignition
+- test/: Unit test bang Hardhat + Chai
+- hardhat.config.ts: Cau hinh Hardhat
+- index.html, app.js, styles.css: Frontend demo ket noi vi
 
-## Demo hiện có
-- Background cơ bản với gradient + hiệu ứng khối mờ.
-- Nút kết nối ví Web3 (MetaMask) bằng `eth_requestAccounts`.
+## Bat dau nhanh
 
-## Phân công công việc (3 người)
-- FE: Thiết kế giao diện quản lý hội viên/gói tập và kết nối ví.
-- BE: Xây API nghiệp vụ và tích hợp gọi smart contract.
-- DB: Thiết kế schema, tối ưu truy vấn và backup dữ liệu.
+1. Cai dependency:
 
-## Ghi chú
-README này là bản cơ bản, sẽ cập nhật thêm khi hoàn thiện kiến trúc dự án.
+```bash
+npm install
+```
+
+2. Compile contract:
+
+```bash
+npm run compile
+```
+
+3. Chay test:
+
+```bash
+npm test
+```
+
+4. Chay local node:
+
+```bash
+npm run node
+```
+
+5. Deploy local (mo terminal moi):
+
+```bash
+npm run deploy:local
+```
+
+6. Frontend demo: mo index.html bang Live Server va bam "Ket noi vi".
+
+## Hop dong mau
+
+GymManager.sol cung cap cac chuc nang co ban:
+
+- Mua goi tap theo gia co dinh
+- Gia han goi tap
+- Truy van thong tin goi tap cua user
+- Owner rut tien tu hop dong
