@@ -1,4 +1,4 @@
--- Run this file in Supabase SQL Editor
+-- Chạy file này trong Supabase SQL Editor
 
 create extension if not exists pgcrypto;
 
@@ -76,7 +76,7 @@ create table if not exists public.gym_service_catalog (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
+--hỗ trợ giỏ hàng
 create table if not exists public.gym_carts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.app_users(id) on delete cascade,
@@ -99,7 +99,7 @@ create table if not exists public.gym_cart_items (
   updated_at timestamptz not null default now(),
   unique (cart_id, service_id, item_name)
 );
-
+--lưu đơn hàng và chi tiết
 create table if not exists public.gym_orders (
   id uuid primary key default gen_random_uuid(),
   order_number text not null unique,
@@ -116,7 +116,7 @@ create table if not exists public.gym_orders (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
+--Lưu chi tiết từng mục trong đơn hàng, hỗ trợ cả sản phẩm và dịch vụ
 create table if not exists public.gym_order_items (
   id bigserial primary key,
   order_id uuid not null references public.gym_orders(id) on delete cascade,
@@ -128,7 +128,7 @@ create table if not exists public.gym_order_items (
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
+--Lưu giao dịch thanh toán, hỗ trợ nhiều loại giao dịch khác nhau (thanh toán đơn hàng, hoàn tiền, rút tiền...)
 create table if not exists public.gym_payment_transactions (
   id bigserial primary key,
   order_id uuid references public.gym_orders(id) on delete set null,
@@ -160,8 +160,8 @@ create table if not exists public.gym_refunds (
   updated_at timestamptz not null default now()
 );
 
--- MetaMask-only flow: the database is intended to be accessed from backend/server code
--- using the Supabase service role key. RLS is enabled so anonymous client access is blocked.
+-- Luồng chỉ dành cho MetaMask: cơ sở dữ liệu được truy cập từ mã backend/server
+-- bằng Supabase service role key. Bật RLS để chặn truy cập từ client ẩn danh.
 alter table public.app_users enable row level security;
 alter table public.app_roles enable row level security;
 alter table public.app_user_roles enable row level security;
@@ -255,9 +255,9 @@ values
   ('SRV-TOWEL', 'Towel Service', 'service', 'Dich vu thue khan', '5000000000000000', true, '{"unit":"visit"}'::jsonb)
 on conflict (service_code) do nothing;
 
--- ==================== SQL HELPER FUNCTIONS ====================
+-- ==================== CÁC HÀM HỖ TRỢ SQL ====================
 
--- Increment total attendance count for a member
+-- Tăng tổng số lần điểm danh của một hội viên
 create or replace function public.increment_attendance(p_user_id uuid)
 returns void
 language plpgsql
@@ -271,7 +271,7 @@ begin
 end;
 $$;
 
--- Calculate total revenue from confirmed payments
+-- Tính tổng doanh thu từ các thanh toán đã xác nhận
 create or replace function public.calculate_total_revenue()
 returns table(total_wei text, confirmed_count bigint)
 language sql
@@ -285,7 +285,7 @@ as $$
   where status = 'confirmed';
 $$;
 
--- Get revenue breakdown by transaction type
+-- Lấy phân tích doanh thu theo loại giao dịch
 create or replace function public.get_revenue_by_type()
 returns table(
   transaction_type text,

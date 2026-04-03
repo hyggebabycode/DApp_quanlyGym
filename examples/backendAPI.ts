@@ -87,10 +87,6 @@ app.post(
   },
 );
 
-/**
- * GET /api/members/:walletAddress/attendance
- * Get member attendance history
- */
 app.get(
   "/api/members/:walletAddress/attendance",
   async (req: Request, res: Response) => {
