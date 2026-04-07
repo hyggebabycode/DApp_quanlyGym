@@ -1,60 +1,117 @@
-# DApp_quanlyGym
+# Backend API for Gym Management DApp
 
-Ung dung DApp quan ly phong gym voi bo khung Hardhat co ban + giao dien frontend tinh.
+This backend provides REST API endpoints for interacting with the GymManager smart contract on Ethereum.
 
-## Phan cong cong viec (3 nguoi)
+## Quick Start
 
-- FE: Thiet ke giao dien quan ly hoi vien/goi tap va ket noi vi.
-- BE: Xay API nghiep vu va tich hop goi smart contract.
-- DB: Thiet ke schema, toi uu truy van va backup du lieu.
+1. **Setup environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your values
+   ```
 
-## Cau truc du an
+2. **Run setup check:**
+   ```bash
+   npm run setup
+   ```
 
-- contracts/: Smart contract Solidity
-- ignition/modules/: Module deploy bang Hardhat Ignition
-- test/: Unit test bang Hardhat + Chai
-- hardhat.config.ts: Cau hinh Hardhat
-- index.html, app.js, styles.css: Frontend demo ket noi vi
+3. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-## Bat dau nhanh
+4. **Start the server:**
+   ```bash
+   npm start          # Production
+   npm run dev        # Development with auto-reload
+   ```
 
-1. Cai dependency:
-
-```bash
-npm install
-```
-
-2. Compile contract:
-
-```bash
-npm run compile
-```
-
-3. Chay test:
+## Docker Development
 
 ```bash
-npm test
+# Start with local Hardhat node
+docker-compose up
+
+# Or build and run manually
+docker build -t gym-backend .
+docker run -p 3001:3001 --env-file .env gym-backend
 ```
 
-4. Chay local node:
+## Testing
 
 ```bash
-npm run node
+npm test           # Run tests once
+npm run test:watch # Run tests in watch mode
 ```
 
-5. Deploy local (mo terminal moi):
+## Project Structure
 
-```bash
-npm run deploy:local
+```
+backend/
+├── config/           # Configuration management
+├── controllers/      # Request handlers
+├── middleware/       # Express middleware
+│   ├── rateLimit.js  # Rate limiting
+│   └── validate.js   # Input validation
+├── routes/           # API routes
+├── services/         # Business logic & blockchain integration
+├── utils/            # Shared utilities
+│   ├── cache.js      # In-memory caching
+│   ├── errors.js     # Custom error classes
+│   └── logger.js     # Logging utility
+├── tests/            # API integration tests
+├── scripts/          # Setup and utility scripts
+├── abi/              # Smart contract ABI
+├── Dockerfile        # Container configuration
+├── docker-compose.yml # Local development setup
+├── package.json      # Dependencies and scripts
+├── server.js         # Application entry point
+└── README.md         # This file
 ```
 
-6. Frontend demo: mo index.html bang Live Server va bam "Ket noi vi".
+## API Endpoints
 
-## Hop dong mau
+### Public Endpoints
 
-GymManager.sol cung cap cac chuc nang co ban:
+- `GET /api/fee` - Get current membership fee
+- `GET /api/member/:address` - Get member status by address
+- `GET /api/members` - Get all members
 
-- Mua goi tap theo gia co dinh
-- Gia han goi tap
-- Truy van thong tin goi tap cua user
-- Owner rut tien tu hop dong
+### Admin Endpoints (requires owner wallet)
+
+- `GET /api/admin/balance` - Get contract ETH balance
+- `GET /api/admin/events` - Get all contract events
+- `POST /api/admin/withdraw` - Withdraw ETH from contract
+- `POST /api/admin/set-fee` - Update membership fee
+- `POST /api/admin/renew` - Renew membership for a member
+
+### Health Check
+
+- `GET /health` - Server and contract health status
+
+## Security Features
+
+- **Rate Limiting**: Different limits for public/admin endpoints
+- **Input Validation**: Address and fee validation
+- **Error Handling**: Structured error responses
+- **CORS**: Cross-origin resource sharing enabled
+
+## Configuration
+
+All configuration is centralized in `config/index.js`. Environment variables:
+
+- `RPC_URL`: Ethereum RPC endpoint
+- `PRIVATE_KEY`: Private key of the contract owner
+- `CONTRACT_ADDRESS`: Deployed GymManager contract address
+- `PORT`: Server port (default 3001)
+- `LOG_LEVEL`: Logging level (error, warn, info, debug)
+
+- `GET /health` - Server and contract health status
+
+## Architecture
+
+- **controllers/**: Business logic handlers
+- **routes/**: API route definitions
+- **services/**: Contract interaction and event watching
+- **middleware/**: Validation and error handling
+- **utils/**: Shared utilities (cache, logger, errors)

@@ -1,0 +1,13 @@
+[
+  "function membershipFee() view returns (uint256)",
+  "function owner() view returns (address)",
+  "function getMemberStatus(address _user) view returns (uint256 expiry, bool active)",
+  "function buyMembership() payable",
+  "function renewMembership(address _user) payable",
+  "function setMembershipFee(uint256 _newFee) external",
+  "function withdraw() external",
+  "event MembershipPurchased(address indexed user, uint256 expiry)",
+  "event MembershipRenewed(address indexed user, uint256 newExpiry)",
+  "event FeeUpdated(uint256 oldFee, uint256 newFee)",
+  "event Withdrawn(address indexed owner, uint256 amount)"
+]
