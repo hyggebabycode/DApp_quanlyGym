@@ -22,25 +22,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <section id="home">
-                <GymWebsite />
-              </section>
-              <section id="pricing">
-                <Pricing />
-              </section>
-              <section id="trainers">
-                <Trainers />
-              </section>
-              <section id="contact">
-                <Contact />
-              </section>
-            </>
-          }
-        />
+        <Route path="/" element={<GymWebsite />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/trainers" element={<Trainers />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route
           path="/admin-portal"
@@ -52,6 +37,14 @@ function App() {
         />
         <Route
           path="/member-portal"
+          element={
+            <RequireRole role="member">
+              <MemberDashboard />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/me"
           element={
             <RequireRole role="member">
               <MemberDashboard />

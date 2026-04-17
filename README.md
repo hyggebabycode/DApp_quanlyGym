@@ -7,10 +7,29 @@
 ```
 demo/
 ├── backend/          # Node.js + Express + SQLite
+├── smartcontract/    # Solidity contract thanh toan goi tap
 ├── src/             # React frontend
+│   └── web3/         # Helpers ket noi MetaMask va contract
 ├── public/          # Static assets
 └── package.json     # Frontend dependencies
 ```
+
+## Cau hinh Smart Contract Payment (MetaMask)
+
+1. Deploy contract `smartcontract/GymPackagePayment.sol` (xem huong dan trong `smartcontract/README.md`).
+2. Tao file `.env` tai thu muc `demo`, hoac copy tu `.env.example` roi dien dia chi contract:
+
+```bash
+VITE_GYM_PAYMENT_CONTRACT_ADDRESS=0xYourDeployedContractAddress
+```
+
+3. Khoi dong lai frontend de nhan bien moi truong:
+
+```bash
+npm run dev
+```
+
+Khi da cau hinh dung, trang Pricing se hien nut `Thanh toan MetaMask` cho moi goi tap.
 
 ## Cài đặt
 

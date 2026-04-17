@@ -1,86 +1,188 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import bgGym from "../../../img/backgroundgym.jpg";
+import SiteNav from "../SiteNav/index";
+import Footer from "../Footer/index";
+import { api } from "../../api";
+
+const packageOrder = ["basic", "pro", "vip"];
+
+const formatPrice = (value) => {
+  const normalized = Number(String(value || "").replace(/[^0-9]/g, ""));
+  if (!Number.isFinite(normalized) || normalized <= 0) {
+    return "Liên hệ";
+  }
+
+  return `${normalized.toLocaleString("vi-VN")} VNĐ`;
+};
 
 const GymWebsite = () => {
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
+  const [packages, setPackages] = useState([]);
 
   useEffect(() => {
-    // Kiểm tra trạng thái đăng nhập từ localStorage
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    const currentUser = localStorage.getItem('currentUser');
+    const loadPackages = async () => {
+      try {
+        const result = await api.getPackages();
+        const nextPackages = (result?.packages || [])
+          .filter((item) => item.is_active)
+          .sort((a, b) => packageOrder.indexOf(a.slug) - packageOrder.indexOf(b.slug));
+        setPackages(nextPackages);
+      } catch (error) {
+        setPackages([]);
+      }
+    };
 
-    if (token && role && currentUser) {
-      setUser({ username: currentUser, role });
-    }
+    loadPackages();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('currentUser');
-    setUser(null);
-    navigate('/');
-  };
+  const homepagePackages = useMemo(() => {
+    return packageOrder
+      .map((slug) => packages.find((item) => item.slug === slug))
+      .filter(Boolean)
+      .slice(0, 3);
+  }, [packages]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white font-sans">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900">
-        <div className="flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
-          <div className="text-3xl font-black italic tracking-tighter text-orange-500">
-            POWER<span className="text-white">GYM</span>
-          </div>
-          <ul className="hidden md:flex gap-10 text-sm font-bold uppercase tracking-widest">
-            <li><a href="#" className="hover:text-orange-500">Trang chủ</a></li>
-            <li><a href="#pricing" className="hover:text-orange-500">Gói tập</a></li>
-            <li><a href="#trainers" className="hover:text-orange-500">Huấn luyện viên</a></li>
-            <li><a href="#contact" className="hover:text-orange-500">Liên hệ</a></li>
-          </ul>
-          <div className="flex gap-3 items-center">
-            {user ? (
-              <>
-                <span className="text-sm text-zinc-300">
-                  Xin chào, <span className="text-orange-500 font-bold">{user.username}</span>
-                  {user.role === 'admin' && <span className="text-red-400 ml-1">(Admin)</span>}
-                </span>
-                <Link
-                  to={user.role === 'admin' ? '/admin-portal' : '/member-portal'}
-                  className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-full font-bold text-sm transition-all"
-                >
-                  {user.role === 'admin' ? 'Admin Panel' : 'Member Portal'}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-full font-bold text-sm transition-all"
-                >
-                  Đăng xuất
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className="bg-orange-600 hover:bg-orange-500 px-6 py-2 rounded-full font-bold text-sm transition-all">
-                ĐĂNG KÝ / ĐĂNG NHẬP
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <SiteNav />
+
+      <main className="mx-auto max-w-7xl px-4 pt-32 pb-20">
+        <section className="grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div className="space-y-6">
+            <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.35em] text-orange-700">
+              Phòng tập hiện đại
+            </span>
+            <h1 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-[-0.02em] text-slate-900 md:text-6xl">
+              Không gian tập luyện
+              <span className="mt-2 block text-orange-600">
+                Dễ hiểu, dễ dùng, dễ bắt đầu
+              </span>
+            </h1>
+            <p className="max-w-2xl text-lg leading-relaxed text-slate-700">
+              Trang chủ này giữ vai trò giới thiệu tổng quan, còn các mục chi tiết như gói tập, huấn luyện viên và liên hệ được tách thành trang riêng để bạn bấm là đi ngay.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link to="/pricing" className="inline-flex items-center justify-center rounded-xl bg-orange-600 px-6 py-4 font-black uppercase tracking-widest text-white shadow-lg shadow-orange-200/50 transition-all hover:bg-orange-700">
+                Xem gói tập
               </Link>
+              <Link to="/contact" className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-4 font-black uppercase tracking-widest text-slate-900 transition-all hover:border-slate-400">
+                Đăng ký tư vấn
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-3">
+              {[
+                { value: '3', label: 'Gói tập chính' },
+                { value: '8+', label: 'Gói trên mỗi trang' },
+                { value: '24/7', label: 'Truy cập linh hoạt' }
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-3xl font-black text-slate-900">{item.value}</p>
+                  <p className="mt-2 text-sm text-slate-600">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-xl">
+            <div className="absolute inset-0 bg-linear-to-br from-orange-50 via-white to-slate-100"></div>
+            <img src={bgGym} alt="Phòng tập" className="relative h-full min-h-105 w-full object-cover opacity-85" />
+            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-950/80 via-slate-950/35 to-transparent p-6 text-white">
+              <p className="text-[10px] uppercase tracking-[0.35em] text-orange-300">POWER GYM</p>
+              <h2 className="mt-2 text-2xl font-black uppercase">Bố cục rõ ràng, thao tác nhanh</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-200">
+                Menu chuyển trang riêng, trang chủ chỉ giới thiệu tổng quan và đưa người dùng tới đúng phần họ cần.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-20 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {[
+            {
+              title: 'Giới thiệu nhanh',
+              text: 'Xem tổng quan về hệ thống, điểm mạnh và trải nghiệm cơ bản của website.',
+              href: '/pricing'
+            },
+            {
+              title: 'Huấn luyện viên',
+              text: 'Xem danh sách HLV theo trang riêng, không còn nhồi toàn bộ vào một màn hình.',
+              href: '/trainers'
+            },
+            {
+              title: 'Liên hệ',
+              text: 'Gửi thông tin tư vấn hoặc đăng ký nhanh theo form riêng biệt.',
+              href: '/contact'
+            }
+          ].map((item) => (
+            <Link key={item.title} to={item.href} className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+              <p className="text-xs font-bold uppercase tracking-[0.35em] text-orange-600">Khám phá</p>
+              <h3 className="mt-3 text-2xl font-black italic uppercase text-slate-900">{item.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-700">{item.text}</p>
+              <span className="mt-6 inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-900">
+                Đi tới trang
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </span>
+            </Link>
+          ))}
+        </section>
+
+        <section className="mt-20 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm md:p-10">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.35em] text-orange-600">Giá gói tập</p>
+              <h2 className="mt-3 text-3xl font-black italic uppercase text-slate-900 md:text-4xl">
+                Cập nhật theo database
+              </h2>
+            </div>
+            <Link
+              to="/pricing"
+              className="rounded-xl border border-slate-300 bg-slate-50 px-5 py-3 text-sm font-black uppercase tracking-widest text-slate-900 transition-all hover:border-slate-400"
+            >
+              Xem chi tiết
+            </Link>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {homepagePackages.length > 0 ? (
+              homepagePackages.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Gói {item.slug}</p>
+                  <h3 className="mt-2 text-2xl font-black uppercase text-slate-900">{item.name}</h3>
+                  <p className="mt-3 text-xl font-black text-orange-600">{formatPrice(item.price)}/Tháng</p>
+                </article>
+              ))
+            ) : (
+              <p className="md:col-span-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+                Chưa có dữ liệu gói tập khả dụng. Vui lòng kiểm tra lại dữ liệu trong trang Admin.
+              </p>
             )}
           </div>
-        </div>
-      </nav>
+        </section>
 
-      <section className="relative flex flex-col items-center justify-center pt-48 pb-32 px-4 text-center overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-600/10 blur-[120px] rounded-full"></div>
-        <h2 className="text-orange-500 font-bold tracking-[0.4em] uppercase mb-6 animate-bounce">No Pain, No Gain</h2>
-        <h1 className="text-6xl md:text-9xl font-black leading-none uppercase italic mb-8 tracking-tighter">
-          THÁCH THỨC <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-orange-400 to-orange-700">GIỚI HẠN</span>
-        </h1>
-        <p className="max-w-2xl text-zinc-400 text-lg md:text-xl mb-10 leading-relaxed">
-          Đừng chỉ mơ ước về một thân hình đẹp. Hãy bắt đầu hành trình thay đổi vóc dáng của bạn tại môi trường tập luyện đẳng cấp nhất.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-5">
-          <a href="#contact" className="bg-white text-black font-black px-10 py-4 uppercase tracking-tighter hover:bg-orange-500 hover:text-white transition-all">Bắt đầu tập luyện</a>
-          <a href="#pricing" className="border-2 border-zinc-700 px-10 py-4 uppercase font-black tracking-tighter hover:border-orange-500 transition-all">Xem bảng giá</a>
-        </div>
-      </section>
+        <section className="mt-20 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm md:p-10">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.35em] text-orange-600">Tại sao chọn trang này</p>
+              <h2 className="mt-4 text-4xl font-black italic uppercase text-slate-900 md:text-5xl">
+                Giao diện cơ bản cho web bình thường
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {[
+                'Trang chủ giới thiệu tổng quan',
+                'Trang gói tập riêng biệt',
+                'Trang huấn luyện viên riêng biệt',
+                'Trang liên hệ riêng biệt'
+              ].map((item) => (
+                <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-700">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
     </div>
   );
 };
