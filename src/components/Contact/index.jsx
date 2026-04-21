@@ -1,143 +1,202 @@
-import React, { useState } from "react";
-import SiteNav from '../SiteNav/index'
-import Footer from '../Footer/index'
+import { useState } from "react";
+import SiteNav from "../SiteNav";
+import Footer from "../Footer";
+import { api } from "../../api";
+import { getPackageDisplayName } from "../../utils/packageMeta";
 
-const Contact = () => {
-  const [submitted, setSubmitted] = useState(false)
-  const [formData, setFormData] = useState({ name: '', phone: '', package: 'Gói Cơ Bản' })
+const initialForm = {
+  name: "",
+  phone: "",
+  email: "",
+  packageSlug: "basic",
+  packageName: "STANDARD",
+  message: "",
+};
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log('Yêu cầu tư vấn đã gửi', formData)
-    setSubmitted(true)
-  }
+const packageOptions = [
+  { slug: "basic", name: "STANDARD" },
+  { slug: "pro", name: "PRO" },
+  { slug: "vip", name: "VIP" },
+];
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+export default function Contact() {
+  const [form, setForm] = useState(initialForm);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handlePackageChange = (slug) => {
+    const selected = packageOptions.find((item) => item.slug === slug);
+    setForm((current) => ({
+      ...current,
+      packageSlug: slug,
+      packageName: selected?.name || current.packageName,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    const result = await api.submitContact(form);
+    if (result.error) {
+      setMessage(result.error);
+    } else {
+      setMessage(result.message || "Da gui yeu cau tu van.");
+      setForm(initialForm);
+    }
+
+    setLoading(false);
+  };
 
   return (
-    <div>
-      <section
-        id="contact"
-        className="relative overflow-hidden border-t border-slate-200 bg-linear-to-b from-white to-slate-100 px-4 py-24 text-slate-900"
-      >
-        <SiteNav />
-        {/* Hiệu ứng ánh sáng nền (thay cho ảnh) */}
-        <div className="absolute bottom-0 right-0 h-125 w-125 rounded-full bg-orange-500/20 blur-[150px]"></div>
+    <div className="app-shell">
+      <SiteNav />
 
-      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
-        {/* CỘT 1: GIỚI THIỆU */}
-        <div className="animate-in fade-in duration-700">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.4em] text-orange-500">
-            Gia nhập cộng đồng
-          </h2>
-          <h1 className="mb-8 text-6xl font-black italic uppercase leading-[0.9] md:text-8xl">
-            BẮT ĐẦU <br /> <span className="text-orange-600">THAY ĐỔI</span>
-          </h1>
-          <p className="mb-12 max-w-md text-lg leading-relaxed text-slate-700">
-            Đăng ký tư vấn và sở hữu thẻ NFT để nhận đặc quyền hội viên vĩnh
-            viễn.
-          </p>
+      <main className="mx-auto max-w-7xl px-4 py-16 md:px-6">
+        <section className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+          <div className="glass-card rounded-[2rem] p-8 md:p-10">
+            <p className="section-heading">Lien he</p>
+            <h1 className="mt-4 text-5xl font-semibold uppercase text-slate-950 md:text-6xl">
+              Bat dau voi mot
+              <span className="block text-orange-600">cuoc tu van ro rang</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+              Form nay gui thong tin ve backend de admin xem trong dashboard.
+              Ban co the dung no de xin tu van, dat lich trao doi hoac chon goi
+              truoc khi thanh toan.
+            </p>
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center border border-slate-300 bg-white">
-                <span className="font-bold italic text-orange-500">A</span>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase text-slate-500">
-                  Địa chỉ
-                </p>
-                <p className="font-bold">Số 1 UTC, Cầu Giấy, Hà Nội</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center border border-slate-300 bg-white">
-                <span className="font-bold italic text-orange-500">P</span>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase text-slate-500">
-                  Hotline
-                </p>
-                <p className="font-bold">1900 6789</p>
-              </div>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2">
+              {[
+                { label: "Dia chi", value: "So 1 UTC, Cau Giay, Ha Noi" },
+                { label: "Hotline", value: "1900 6789" },
+                { label: "Email", value: "contact@powergym.local" },
+                { label: "Network", value: "Oasis Sapphire Testnet" },
+              ].map((item) => (
+                <div key={item.label} className="metric-card">
+                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="mt-3 text-base font-semibold text-slate-900">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
 
-        <div className="relative flex min-h-125 items-center border border-slate-200 bg-white p-8 backdrop-blur-sm shadow-sm">
-          {!submitted ? (
-            <form className="w-full space-y-6 animate-in fade-in duration-500" onSubmit={handleSubmit}>
-              <div>
-                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-600">
-                  Họ và tên
-                </label>
+          <form
+            onSubmit={handleSubmit}
+            className="glass-card rounded-[2rem] p-8 md:p-10"
+          >
+            <p className="section-heading">Form</p>
+            <h2 className="mt-4 text-4xl font-semibold uppercase text-slate-950">
+              Gui thong tin ngay
+            </h2>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  Ho ten
+                </span>
                 <input
+                  value={form.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none transition focus:border-orange-400"
+                  placeholder="Nguyen Van A"
                   required
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  type="text"
-                  placeholder="Nguyễn Văn A"
-                  className="w-full border border-slate-300 bg-white p-4 outline-none transition-all focus:border-orange-600"
                 />
-              </div>
-              <div>
-                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-600">
-                  Số điện thoại
-                </label>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  So dien thoai
+                </span>
                 <input
+                  value={form.phone}
+                  onChange={(event) => updateField("phone", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none transition focus:border-orange-400"
+                  placeholder="09xx xxx xxx"
                   required
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  type="tel"
-                  placeholder="0912 345 xxx"
-                  className="w-full border border-slate-300 bg-white p-4 outline-none transition-all focus:border-orange-600"
                 />
-              </div>
-              <div>
-                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-600">
-                  Gói tập quan tâm
-                </label>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  Email
+                </span>
+                <input
+                  value={form.email}
+                  onChange={(event) => updateField("email", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none transition focus:border-orange-400"
+                  placeholder="email@example.com"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  Goi quan tam
+                </span>
                 <select
-                  name="package"
-                  value={formData.package}
-                  onChange={handleChange}
-                  className="w-full border border-slate-300 bg-white p-4 text-slate-800 outline-none transition-all focus:border-orange-600"
+                  value={form.packageSlug}
+                  onChange={(event) => handlePackageChange(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none transition focus:border-orange-400"
+                  required
                 >
-                  <option>Gói Cơ Bản</option>
-                  <option>Gói Chuyên Nghiệp</option>
-                  <option>Gói VIP</option>
+                  {packageOptions.map((item) => (
+                    <option key={item.slug} value={item.slug}>
+                      {getPackageDisplayName(item.slug, item.name)}
+                    </option>
+                  ))}
                 </select>
+              </label>
+            </div>
+
+            <label className="mt-4 block">
+              <span className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                Noi dung
+              </span>
+              <textarea
+                rows="6"
+                value={form.message}
+                onChange={(event) => updateField("message", event.target.value)}
+                className="w-full rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 outline-none transition focus:border-orange-400"
+                placeholder="Ban muon tu van muc tieu tap luyen, goi tap hay quy trinh thanh toan?"
+              />
+            </label>
+
+            {message && (
+              <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 text-sm font-semibold text-orange-700">
+                {message}
               </div>
-              <button type="submit" className="w-full bg-orange-600 py-5 text-white font-black uppercase tracking-[0.2em] transition-all hover:bg-orange-500">
-                Gửi yêu cầu tư vấn
-              </button>
-            </form>
-          ) : (
-            <div className="w-full text-center animate-in zoom-in duration-500">
-              <h3 className="mb-3 text-2xl font-black uppercase">Yêu cầu tư vấn đã được gửi!</h3>
-              <p className="mx-auto mb-8 max-w-sm text-sm leading-relaxed text-slate-600">
-                Chúng tôi sẽ liên hệ lại bạn trong thời gian sớm nhất.
-              </p>
+            )}
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button
-                onClick={() => setSubmitted(false)}
-                className="w-full bg-slate-900 text-white px-6 py-4 font-black uppercase tracking-widest transition-all hover:bg-orange-600"
+                type="submit"
+                disabled={loading}
+                className="rounded-2xl bg-orange-600 px-6 py-4 text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Gửi yêu cầu khác
+                {loading ? "Dang gui..." : "Gui yeu cau"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(initialForm)}
+                className="rounded-2xl border border-slate-300 px-6 py-4 text-sm font-black uppercase tracking-[0.18em] text-slate-700 transition hover:border-slate-400"
+              >
+                Dat lai form
               </button>
             </div>
-          )}
-        </div>
-      </div>
-      </section>
+          </form>
+        </section>
+      </main>
+
       <Footer />
     </div>
   );
-};
-
-export default Contact;
+}

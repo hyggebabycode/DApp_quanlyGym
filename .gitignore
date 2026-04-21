@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+backend/.env
+smartcontract/.env
+*.bak
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +26,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+desktop.ini
+nul
+
+# Generated smart contract outputs
+smartcontract/artifacts/
+smartcontract/cache/
+smartcontract/typechain-types/
+smartcontract/deploy-log.txt
+smartcontract/sapphire-deploy-out.txt

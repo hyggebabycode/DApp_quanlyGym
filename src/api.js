@@ -1,223 +1,237 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
 
-const parseApiResponse = async (response) => {
+const SESSION_TOKEN_KEY = "powergym_token";
+const SESSION_USER_KEY = "powergym_user";
+
+const readJson = async (response) => {
   const text = await response.text();
-  let data = {};
 
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch (error) {
-      data = {};
-    }
+  if (!text) {
+    return {};
   }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
+};
+
+const request = async (path, options = {}) => {
+  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  const data = await readJson(response);
 
   if (!response.ok) {
     return {
-      error: data.error || `Không thể kết nối API (${response.status})`
+      error: data.error || `API error (${response.status})`,
     };
   }
 
   return data;
 };
 
-// Helper function để lấy token từ localStorage
-const getAuthToken = () => localStorage.getItem('token');
+export const session = {
+  get token() {
+    return localStorage.getItem(SESSION_TOKEN_KEY) || "";
+  },
+  get user() {
+    const raw = localStorage.getItem(SESSION_USER_KEY);
+    if (!raw) {
+      return null;
+    }
 
-// Helper function để tạo headers với authorization
-const getAuthHeaders = () => ({
-  'Content-Type': 'application/json',
-  ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` })
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  },
+  setAuth(nextToken, nextUser) {
+    localStorage.setItem(SESSION_TOKEN_KEY, nextToken);
+    localStorage.setItem(SESSION_USER_KEY, JSON.stringify(nextUser));
+  },
+  clear() {
+    localStorage.removeItem(SESSION_TOKEN_KEY);
+    localStorage.removeItem(SESSION_USER_KEY);
+  },
+};
+
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  ...(session.token ? { Authorization: `Bearer ${session.token}` } : {}),
 });
 
-// API functions
 export const api = {
-  // Auth
-  register: async (username, password) => {
-    const response = await fetch(`${API_BASE_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    return response.json();
-  },
+  register: async ({ username, password, fullName }) =>
+    request("/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, fullName }),
+    }),
 
-  login: async (username, password) => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    return response.json();
-  },
+  login: async ({ username, password }) =>
+    request("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    }),
 
-  loginWithMetamask: async (metamaskAddress) => {
-    const response = await fetch(`${API_BASE_URL}/login-metamask`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ metamaskAddress })
-    });
-    return response.json();
-  },
+  getWalletChallenge: async (walletAddress) =>
+    request("/auth/wallet/challenge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ walletAddress }),
+    }),
 
-  // Member
-  getCurrentMember: async () => {
-    const response = await fetch(`${API_BASE_URL}/member`, {
-      headers: getAuthHeaders()
-    });
-    return response.json();
-  },
+  verifyWalletLogin: async ({ walletAddress, signature }) =>
+    request("/auth/wallet/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ walletAddress, signature }),
+    }),
 
-  linkMetamask: async (metamaskAddress) => {
-    const response = await fetch(`${API_BASE_URL}/link-metamask`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ metamaskAddress })
-    });
-    return response.json();
-  },
+  getLinkWalletChallenge: async (walletAddress) =>
+    request("/member/link-wallet/challenge", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ walletAddress }),
+    }),
 
-  // Admin
-  getAllMembers: async () => {
-    const response = await fetch(`${API_BASE_URL}/admin/members`, {
-      headers: getAuthHeaders()
-    });
-    return response.json();
-  },
+  verifyLinkWallet: async ({ walletAddress, signature }) =>
+    request("/member/link-wallet/verify", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ walletAddress, signature }),
+    }),
 
-  updateMember: async (memberId, updates) => {
-    const response = await fetch(`${API_BASE_URL}/admin/members/${memberId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(updates)
-    });
-    return response.json();
-  },
+  getCurrentMember: async () =>
+    request("/member", {
+      headers: authHeaders(),
+    }),
 
-  deleteMember: async (memberId) => {
-    const response = await fetch(`${API_BASE_URL}/admin/members/${memberId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return response.json();
-  },
+  getMemberPayments: async () =>
+    request("/member/payments", {
+      headers: authHeaders(),
+    }),
 
-  // Setup
-  setupAdmin: async () => {
-    const response = await fetch(`${API_BASE_URL}/setup-admin`, {
-      method: 'POST'
-    });
-    return response.json();
-  },
+  createPackageRequest: async (packageSlug) =>
+    request("/member/package-request", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ packageSlug }),
+    }),
 
-  // Package Requests
-  createPackageRequest: async (packageData) => {
-    const response = await fetch(`${API_BASE_URL}/member/package-request`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(packageData)
-    });
-    return response.json();
-  },
+  confirmPayment: async ({ txHash, packageSlug, walletAddress }) =>
+    request("/member/payments/confirm", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ txHash, packageSlug, walletAddress }),
+    }),
 
-  getPackageRequests: async () => {
-    const response = await fetch(`${API_BASE_URL}/admin/package-requests`, {
-      headers: getAuthHeaders()
-    });
-    return response.json();
-  },
+  getPackages: async () => request("/packages"),
 
-  getRevenueSummary: async () => {
-    const response = await fetch(`${API_BASE_URL}/admin/revenue-summary`, {
-      headers: getAuthHeaders()
-    });
-    return response.json();
-  },
+  getTrainers: async () => request("/trainers"),
 
-  updatePackageRequest: async (requestId, status) => {
-    const response = await fetch(`${API_BASE_URL}/admin/package-requests/${requestId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ status })
-    });
-    return response.json();
-  },
+  submitContact: async (payload) =>
+    request("/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
 
-  // Packages
-  getPackages: async () => {
-    const response = await fetch(`${API_BASE_URL}/packages`);
-    return response.json();
-  },
+  getAdminDashboard: async () =>
+    request("/admin/dashboard", {
+      headers: authHeaders(),
+    }),
 
-  // Trainers
-  getTrainers: async () => {
-    const response = await fetch(`${API_BASE_URL}/trainers`);
-    return parseApiResponse(response);
-  },
+  getAllMembers: async () =>
+    request("/admin/members", {
+      headers: authHeaders(),
+    }),
 
-  getAdminTrainers: async () => {
-    const response = await fetch(`${API_BASE_URL}/admin/trainers`, {
-      headers: getAuthHeaders()
-    });
-    return parseApiResponse(response);
-  },
+  updateMember: async (memberId, updates) =>
+    request(`/admin/members/${memberId}`, {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(updates),
+    }),
 
-  createTrainer: async (trainerData) => {
-    const response = await fetch(`${API_BASE_URL}/admin/trainers`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(trainerData)
-    });
-    return parseApiResponse(response);
-  },
+  deleteMember: async (memberId) =>
+    request(`/admin/members/${memberId}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    }),
 
-  updateTrainer: async (trainerId, trainerData) => {
-    const response = await fetch(`${API_BASE_URL}/admin/trainers/${trainerId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(trainerData)
-    });
-    return parseApiResponse(response);
-  },
+  getPackageRequests: async () =>
+    request("/admin/package-requests", {
+      headers: authHeaders(),
+    }),
 
-  deleteTrainer: async (trainerId) => {
-    const response = await fetch(`${API_BASE_URL}/admin/trainers/${trainerId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return parseApiResponse(response);
-  },
+  updatePackageRequest: async (requestId, status) =>
+    request(`/admin/package-requests/${requestId}`, {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify({ status }),
+    }),
 
-  getAdminPackages: async () => {
-    const response = await fetch(`${API_BASE_URL}/admin/packages`, {
-      headers: getAuthHeaders()
-    });
-    return response.json();
-  },
+  getAdminPayments: async () =>
+    request("/admin/payments", {
+      headers: authHeaders(),
+    }),
 
-  createPackage: async (packageData) => {
-    const response = await fetch(`${API_BASE_URL}/admin/packages`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(packageData)
-    });
-    return response.json();
-  },
+  getAdminContacts: async () =>
+    request("/admin/contacts", {
+      headers: authHeaders(),
+    }),
 
-  updatePackage: async (packageId, packageData) => {
-    const response = await fetch(`${API_BASE_URL}/admin/packages/${packageId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(packageData)
-    });
-    return response.json();
-  },
+  getAdminPackages: async () =>
+    request("/admin/packages", {
+      headers: authHeaders(),
+    }),
 
-  deletePackage: async (packageId) => {
-    const response = await fetch(`${API_BASE_URL}/admin/packages/${packageId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return response.json();
-  }
+  createPackage: async (payload) =>
+    request("/admin/packages", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    }),
+
+  updatePackage: async (packageId, payload) =>
+    request(`/admin/packages/${packageId}`, {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    }),
+
+  deletePackage: async (packageId) =>
+    request(`/admin/packages/${packageId}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    }),
+
+  getAdminTrainers: async () =>
+    request("/admin/trainers", {
+      headers: authHeaders(),
+    }),
+
+  createTrainer: async (payload) =>
+    request("/admin/trainers", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    }),
+
+  updateTrainer: async (trainerId, payload) =>
+    request(`/admin/trainers/${trainerId}`, {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    }),
+
+  deleteTrainer: async (trainerId) =>
+    request(`/admin/trainers/${trainerId}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    }),
 };

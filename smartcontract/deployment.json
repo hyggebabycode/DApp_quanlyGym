@@ -1,0 +1,20 @@
+{
+  "contractAddress": "0x48a9Df6e8360432C205a25F37248e4cd09A83997",
+  "owner": "0xC91DD3d721f7146e4DC759716b158546F2a4E551",
+  "treasuryWallet": "0xC91DD3d721f7146e4DC759716b158546F2a4E551",
+  "deployer": "0xC91DD3d721f7146e4DC759716b158546F2a4E551",
+  "admins": [
+    "0xC91DD3d721f7146e4DC759716b158546F2a4E551"
+  ],
+  "membershipPlans": {
+    "STANDARD": {
+      "price": "0.5 TEST",
+      "durationDays": "30"
+    },
+    "VIP": {
+      "price": "1.0 TEST",
+      "durationDays": "30"
+    }
+  },
+  "deployedAt": "2026-04-20T17:07:56.494Z"
+}

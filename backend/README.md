@@ -1,63 +1,117 @@
-# Demo Backend
+# Backend API for Gym Management DApp
 
-Backend server cho ứng dụng demo với SQLite database.
+This backend provides REST API endpoints for interacting with the GymManager smart contract on Ethereum.
 
-## Cài đặt
+## Quick Start
+
+1. **Setup environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your values
+   ```
+
+2. **Run setup check:**
+   ```bash
+   npm run setup
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+4. **Start the server:**
+   ```bash
+   npm start          # Production
+   npm run dev        # Development with auto-reload
+   ```
+
+## Docker Development
 
 ```bash
-cd backend
-npm install
+# Start with local Hardhat node
+docker-compose up
+
+# Or build and run manually
+docker build -t gym-backend .
+docker run -p 3001:3001 --env-file .env gym-backend
 ```
 
-## Chạy server
+## Testing
 
 ```bash
-npm start
-# hoặc để development
-npm run dev
+npm test           # Run tests once
+npm run test:watch # Run tests in watch mode
 ```
 
-Server sẽ chạy trên http://localhost:3001
+## Project Structure
+
+```
+backend/
+├── config/           # Configuration management
+├── controllers/      # Request handlers
+├── middleware/       # Express middleware
+│   ├── rateLimit.js  # Rate limiting
+│   └── validate.js   # Input validation
+├── routes/           # API routes
+├── services/         # Business logic & blockchain integration
+├── utils/            # Shared utilities
+│   ├── cache.js      # In-memory caching
+│   ├── errors.js     # Custom error classes
+│   └── logger.js     # Logging utility
+├── tests/            # API integration tests
+├── scripts/          # Setup and utility scripts
+├── abi/              # Smart contract ABI
+├── Dockerfile        # Container configuration
+├── docker-compose.yml # Local development setup
+├── package.json      # Dependencies and scripts
+├── server.js         # Application entry point
+└── README.md         # This file
+```
 
 ## API Endpoints
 
-### Auth
-- `POST /api/register` - Đăng ký
-- `POST /api/login` - Đăng nhập
-- `POST /api/login-metamask` - Đăng nhập bằng MetaMask
+### Public Endpoints
 
-### Member
-- `GET /api/member` - Lấy thông tin member hiện tại
-- `POST /api/link-metamask` - Liên kết MetaMask
+- `GET /api/fee` - Get current membership fee
+- `GET /api/member/:address` - Get member status by address
+- `GET /api/members` - Get all members
 
-### Packages
-- `GET /api/packages` - Lấy danh sách gói tập đang hoạt động
+### Admin Endpoints (requires owner wallet)
 
-### Admin Packages
-- `GET /api/admin/packages` - Lấy toàn bộ gói tập
-- `POST /api/admin/packages` - Tạo gói tập mới
-- `PUT /api/admin/packages/:id` - Cập nhật gói tập
-- `DELETE /api/admin/packages/:id` - Xóa gói tập
+- `GET /api/admin/balance` - Get contract ETH balance
+- `GET /api/admin/events` - Get all contract events
+- `POST /api/admin/withdraw` - Withdraw ETH from contract
+- `POST /api/admin/set-fee` - Update membership fee
+- `POST /api/admin/renew` - Renew membership for a member
 
-### Admin
-- `GET /api/admin/members` - Lấy danh sách tất cả members
-- `PUT /api/admin/members/:id` - Cập nhật member
-- `DELETE /api/admin/members/:id` - Xóa member
+### Health Check
 
-### Setup
-- `POST /api/setup-admin` - Tạo admin mặc định (username: admin, password: admin123)
+- `GET /health` - Server and contract health status
 
-## Database
+## Security Features
 
-Sử dụng SQLite với file `members.db`. Schema tự động tạo khi server khởi động.
+- **Rate Limiting**: Different limits for public/admin endpoints
+- **Input Validation**: Address and fee validation
+- **Error Handling**: Structured error responses
+- **CORS**: Cross-origin resource sharing enabled
 
-Các bảng chính:
-- `members` - tài khoản người dùng
-- `package_requests` - yêu cầu đăng ký gói tập
-- `packages` - danh sách gói tập cơ bản được seed sẵn
+## Configuration
 
-## Bảo mật
+All configuration is centralized in `config/index.js`. Environment variables:
 
-- Mật khẩu được hash bằng bcrypt
-- JWT tokens cho authentication
-- CORS enabled
+- `RPC_URL`: Ethereum RPC endpoint
+- `PRIVATE_KEY`: Private key of the contract owner
+- `CONTRACT_ADDRESS`: Deployed GymManager contract address
+- `PORT`: Server port (default 3001)
+- `LOG_LEVEL`: Logging level (error, warn, info, debug)
+
+- `GET /health` - Server and contract health status
+
+## Architecture
+
+- **controllers/**: Business logic handlers
+- **routes/**: API route definitions
+- **services/**: Contract interaction and event watching
+- **middleware/**: Validation and error handling
+- **utils/**: Shared utilities (cache, logger, errors)

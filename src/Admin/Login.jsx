@@ -1,135 +1,179 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import bgGym from '../../img/backgroundgym.jpg'
-import { api } from '../api'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { api, session } from "../api";
+import {
+  connectMetaMaskWallet,
+  signWalletMessage,
+} from "../web3/gymPaymentContract";
+
+const storeAndRedirect = (token, user, navigate) => {
+  session.setAuth(token, user);
+  navigate(user.role === "admin" ? "/admin-portal" : "/member-portal");
+};
 
 export default function Login() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handlePasswordLogin = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    const result = await api.login(form);
+    if (result.error) {
+      setMessage(result.error);
+    } else {
+      storeAndRedirect(result.token, result.user, navigate);
+    }
+
+    setLoading(false);
+  };
+
+  const handleWalletLogin = async () => {
+    setLoading(true);
+    setMessage("");
 
     try {
-      const result = await api.login(username, password)
+      const { address } = await connectMetaMaskWallet();
+      const challenge = await api.getWalletChallenge(address);
+
+      if (challenge.error) {
+        setMessage(challenge.error);
+        setLoading(false);
+        return;
+      }
+
+      const { signature } = await signWalletMessage(challenge.message);
+      const result = await api.verifyWalletLogin({
+        walletAddress: address,
+        signature,
+      });
 
       if (result.error) {
-        setError(result.error)
+        setMessage(result.error);
       } else {
-        localStorage.setItem('token', result.token)
-        localStorage.setItem('role', result.user.role)
-        localStorage.setItem('currentUser', result.user.username)
-
-        if (result.user.role === 'admin') {
-          navigate('/admin-portal')
-        } else {
-          navigate('/')
-        }
+        storeAndRedirect(result.token, result.user, navigate);
       }
-    } catch (err) {
-      setError('Lỗi kết nối server. Vui lòng thử lại.')
-    } finally {
-      setLoading(false)
+    } catch (error) {
+      setMessage(error?.message || "Khong the dang nhap voi MetaMask.");
     }
-  }
 
-  const handleMetamask = async () => {
-    if (!window.ethereum) {
-      setError('Vui lòng cài MetaMask trước khi dùng tính năng này.')
-      return
-    }
-    try {
-      setLoading(true)
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const address = accounts[0]?.toLowerCase() || ''
-
-      if (!address) {
-        setError('Không tìm thấy địa chỉ MetaMask.')
-        return
-      }
-
-      const result = await api.loginWithMetamask(address)
-
-      if (result.error) {
-        setError(result.error)
-      } else {
-        localStorage.setItem('token', result.token)
-        localStorage.setItem('role', result.user.role)
-        localStorage.setItem('currentUser', result.user.username)
-
-        if (result.user.role === 'admin') {
-          navigate('/admin-portal')
-        } else {
-          navigate('/')
-        }
-      }
-    } catch (err) {
-      console.error(err)
-      setError('Không thể đăng nhập MetaMask. Vui lòng thử lại.')
-    } finally {
-      setLoading(false)
-    }
-  }
+    setLoading(false);
+  };
 
   return (
-    <div
-      className="relative min-h-screen flex items-center justify-center px-4 bg-cover bg-center"
-      style={{
-        backgroundImage: `linear-gradient(rgba(248, 250, 252, 0.84), rgba(241, 245, 249, 0.92)), url(${bgGym})`
-      }}
-    >
-      <div className="pointer-events-none absolute -left-12 top-8 h-44 w-44 rounded-full bg-orange-300/35 blur-3xl" />
-      <div className="pointer-events-none absolute -right-12 bottom-6 h-56 w-56 rounded-full bg-sky-200/45 blur-3xl" />
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-zinc-950/90 rounded-xl p-8 shadow-lg text-white border border-zinc-700 backdrop-blur-sm">
-        <h2 className="text-3xl font-bold mb-5">Đăng nhập</h2>
-        {error && <p className="mb-4 text-red-300">{error}</p>}
+    <div className="app-shell min-h-screen">
+      <div className="mx-auto flex min-h-screen max-w-7xl items-center px-4 py-10 md:px-6">
+        <div className="grid w-full gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="glass-card rounded-[2rem] p-8 md:p-10">
+            <p className="section-heading">Dang nhap</p>
+            <h1 className="mt-4 text-5xl font-semibold uppercase text-slate-950 md:text-6xl">
+              Quay lai voi
+              <span className="block text-orange-600">PowerGym</span>
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-slate-600">
+              Ban co the dang nhap bang username/password hoac bang chu ky so tu
+              MetaMask. Neu vi admin duoc su dung, he thong se vao thang admin
+              portal.
+            </p>
+            <div className="mt-8 space-y-3">
+              <div className="metric-card">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  Cach 1
+                </p>
+                <p className="mt-2 text-base font-semibold text-slate-900">
+                  Dang nhap bang tai khoan da dang ky.
+                </p>
+              </div>
+              <div className="metric-card">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  Cach 2
+                </p>
+                <p className="mt-2 text-base font-semibold text-slate-900">
+                  Dang nhap bang MetaMask qua challenge + signature.
+                </p>
+              </div>
+            </div>
+          </div>
 
-        <div className="space-y-3">
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Tên đăng nhập"
-            className="w-full px-4 py-3 rounded-lg bg-zinc-900/90 border border-zinc-600 focus:outline-none text-white placeholder:text-zinc-400"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mật khẩu"
-            className="w-full px-4 py-3 rounded-lg bg-zinc-900/90 border border-zinc-600 focus:outline-none text-white placeholder:text-zinc-400"
-          />
+          <form
+            onSubmit={handlePasswordLogin}
+            className="glass-card rounded-[2rem] p-8 md:p-10"
+          >
+            <p className="section-heading">Tai khoan</p>
+            <h2 className="mt-4 text-4xl font-semibold uppercase text-slate-950">
+              Dang nhap ngay
+            </h2>
+
+            <div className="mt-8 space-y-4">
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  Username
+                </span>
+                <input
+                  value={form.username}
+                  onChange={(event) => updateField("username", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none transition focus:border-orange-400"
+                  placeholder="admin"
+                  required
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                  Password
+                </span>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(event) => updateField("password", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 outline-none transition focus:border-orange-400"
+                  placeholder="••••••••"
+                  required
+                />
+              </label>
+            </div>
+
+            {message && (
+              <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 text-sm font-semibold text-orange-700">
+                {message}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-2xl bg-orange-600 px-6 py-4 text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? "Dang xu ly..." : "Dang nhap"}
+              </button>
+              <button
+                type="button"
+                onClick={handleWalletLogin}
+                disabled={loading}
+                className="rounded-2xl border border-slate-300 bg-white px-6 py-4 text-sm font-black uppercase tracking-[0.18em] text-slate-900 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Dang nhap voi MetaMask
+              </button>
+            </div>
+
+            <p className="mt-6 text-sm text-slate-600">
+              Chua co tai khoan?{" "}
+              <Link to="/register" className="font-bold text-orange-600">
+                Dang ky tai day
+              </Link>
+            </p>
+          </form>
         </div>
-
-        <button type="submit" className="mt-4 w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 rounded-lg font-bold text-white" disabled={loading}>
-          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleMetamask}
-          disabled={loading}
-          className="mt-3 w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-white"
-        >
-          {loading ? 'Đang kết nối MetaMask...' : 'Tiếp tục với MetaMask'}
-        </button>
-
-        <p className="mt-4 text-sm text-zinc-400">
-          Chưa có tài khoản?{' '}
-          <Link to="/register" className="text-orange-300 hover:text-orange-200 font-bold">
-            Đăng ký ngay
-          </Link>
-        </p>
-
-        <p className="mt-3 text-xs text-zinc-300">
-          admin/admin123 hoặc user/user123 .
-        </p>
-      </form>
+      </div>
     </div>
-  )
+  );
 }
-

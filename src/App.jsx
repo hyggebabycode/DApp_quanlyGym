@@ -1,60 +1,64 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import GymWebsite from "./components/Hello";
+import Pricing from "./components/Pricing";
+import Trainers from "./components/Trainers";
+import Contact from "./components/Contact";
+import AdminDashboard from "./Admin";
+import Login from "./Admin/Login";
+import Register from "./Admin/Register";
+import MemberDashboard from "./components/Member";
+import { session } from "./api";
 
-import GymWebsite from './components/Hello/index'
-import Pricing from './components/Pricing/index'
-import Trainers from './components/Trainers/index'
-import Contact from './components/Contact/index'
-import AdminDashboard from './Admin/index'
-import Login from './Admin/Login'
-import Register from './Admin/Register'
-import MemberDashboard from './components/Member/index'
+function RequireAuth({ children, role = "" }) {
+  const user = session.user;
 
-function RequireRole({ role, children }) {
-  const currentRole = localStorage.getItem('role')
-  if (currentRole !== role) {
-    return <Navigate to="/login" replace />
+  if (!user || !session.token) {
+    return <Navigate to="/login" replace />;
   }
-  return children
+
+  if (role && user.role !== role) {
+    return <Navigate to={user.role === "admin" ? "/admin-portal" : "/member-portal"} replace />;
+  }
+
+  return children;
 }
 
-function App() {
+export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<GymWebsite />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/trainers" element={<Trainers />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/admin-portal"
-          element={
-            <RequireRole role="admin">
-              <AdminDashboard />
-            </RequireRole>
-          }
-        />
+        <Route path="/register" element={<Register />} />
         <Route
           path="/member-portal"
           element={
-            <RequireRole role="member">
+            <RequireAuth role="member">
               <MemberDashboard />
-            </RequireRole>
+            </RequireAuth>
           }
         />
         <Route
           path="/me"
           element={
-            <RequireRole role="member">
+            <RequireAuth role="member">
               <MemberDashboard />
-            </RequireRole>
+            </RequireAuth>
           }
         />
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/admin-portal"
+          element={
+            <RequireAuth role="admin">
+              <AdminDashboard />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
-  )
+    </BrowserRouter>
+  );
 }
-
-export default App

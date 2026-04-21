@@ -1,0 +1,46 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - RPC_URL=${RPC_URL}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    env_file:
+      - .env
+    depends_on:
+      - hardhat
+    networks:
+      - gym-network
+    restart: unless-stopped
+
+  hardhat:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ../:/app
+    ports:
+      - "8545:8545"
+    command: >
+      sh -c "
+        cd /app &&
+        npm install &&
+        npx hardhat node --hostname 0.0.0.0
+      "
+    networks:
+      - gym-network
+    restart: unless-stopped
+
+networks:
+  gym-network:
+    driver: bridge
+
+volumes:
+  node_modules:
